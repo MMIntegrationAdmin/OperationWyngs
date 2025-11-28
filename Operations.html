@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Sam Anish">
+    <meta name="team" content="Motiveminds Integration Team">
+    <title>Stylish Employee Dashboard</title>
+    <style>
+        /* General styles */
+        * {
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            border-radius: 3px;
+        }
+        h1 {
+            color: #2a72d9;
+            margin-bottom: 20px;
+        }
+        
+        /* Styled buttons */
+        button, .file-input-label {
+            background-color: #2a72d9;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+            margin-right: 10px;
+            transition: background 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        button:hover, .file-input-label:hover {
+            background-color: #1e5dbd;
+        }
+
+        /* Refresh button */
+        .refresh-btn {
+            background-color: #28a745;
+            padding: 10px 12px;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .refresh-btn:hover {
+            background-color: #218838;
+        }
+        
+        /* Hide the default file input */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Search input styling */
+        input[type="text"] {
+            padding: 10px 15px;
+            border: 2px solid #2a72d9;
+            border-radius: 3px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            margin-right: 10px;
+            width: 250px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1e5dbd;
+            box-shadow: 0 4px 12px rgba(42, 114, 217, 0.3);
+        }
+
+        /* Dropdown styling */
+        select {
+            padding: 10px 15px;
+            border: 2px solid #2a72d9;
+            border-radius: 3px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            margin-right: 10px;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+        }
+        select:focus {
+            outline: none;
+            border-color: #1e5dbd;
+            box-shadow: 0 4px 12px rgba(42, 114, 217, 0.3);
+        }
+
+        /* Allocation range filter - smaller width */
+        #allocationRangeFilter {
+            min-width: 180px;
+        }
+
+        /* Chart container */
+        #chartContainer {
+            background: #fff;
+            border-radius: 3px;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            height: 600px;
+        }
+        canvas {
+            max-width: 100%;
+            border-radius: 3px;
+        }
+
+        /* Make Y-axis labels clickable */
+        .chartjs-render-monitor {
+            cursor: default;
+        }
+
+        /* Tooltip styling */
+        #custom-tooltip {
+            position: absolute;
+            background-color: rgba(42, 114, 217, 0.9);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 3px;
+            pointer-events: none;
+            opacity: 0;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Animation for tooltip */
+        #custom-tooltip.show {
+            opacity: 1;
+            transform: translateX(10px);
+        }
+
+        /* Results counter */
+        #resultsCounter {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 3% auto;
+            padding: 25px;
+            border-radius: 8px;
+            width: 95%;
+            max-width: 1000px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #2a72d9;
+        }
+
+        .modal h2 {
+            color: #2a72d9;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .modal-body-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .employee-info-section {
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .projects-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 6px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            width: 140px;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .project-section {
+            padding: 12px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #2a72d9;
+        }
+
+        .project-section h3 {
+            color: #2a72d9;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; align-items: center; flex-wrap: wrap; justify-content: center;">
+        <label for="fileInput" class="file-input-label">Choose File</label>
+        <input type="file" id="fileInput" accept=".csv">
+        <select id="serviceLineFilter">
+            <option value="">All Service Lines</option>
+        </select>
+        <select id="primarySkillFilter">
+            <option value="">All Primary Skills</option>
+        </select>
+        <select id="userStatusFilter">
+            <option value="">All User Status</option>
+        </select>
+        <select id="allocationRangeFilter">
+            <option value="">All Allocations</option>
+            <option value="0">0% Allocated</option>
+            <option value="1-25">1-25% Allocated</option>
+            <option value="26-50">26-50% Allocated</option>
+            <option value="51-75">51-75% Allocated</option>
+            <option value="76-99">76-99% Allocated</option>
+            <option value="100">100% Allocated</option>
+            <option value="over">Over-allocated (>100%)</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="Search by Employee Name...">
+        <button id="refreshButton" class="refresh-btn" title="Clear All Filters">↻</button>
+    </div>
+
+    <div id="resultsCounter"></div>
+
+    <div id="chartContainer">
+        <canvas id="allocationChart"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let employeeData = []; 
+        let allocationChart;
+        let filteredData = [];
+        let currentSearchTerm = '';
+        let currentServiceLine = '';
+        let currentPrimarySkill = '';
+        let currentUserStatus = '';
+        let currentAllocationRange = '';
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        employeeData = results.data;
+                        filteredData = employeeData;
+                        populateServiceLineDropdown();
+                        populatePrimarySkillDropdown();
+                        populateUserStatusDropdown();
+                        updateStackedBarChart(filteredData);
+                        updateResultsCounter(filteredData.length, employeeData.length);
+                    }
+                });
+            }
+        });
+
+        // Populate Service Line dropdown with unique values
+        function populateServiceLineDropdown() {
+            const serviceLines = new Set();
+            employeeData.forEach(employee => {
+                if (employee['Service Line']) {
+                    serviceLines.add(employee['Service Line']);
+                }
+            });
+
+            const dropdown = document.getElementById('serviceLineFilter');
+            dropdown.innerHTML = '<option value="">All Service Lines</option>';
+            
+            Array.from(serviceLines).sort().forEach(serviceLine => {
+                const option = document.createElement('option');
+                option.value = serviceLine;
+                option.textContent = serviceLine;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Populate Primary Skill dropdown with unique values
+        function populatePrimarySkillDropdown() {
+            const primarySkills = new Set();
+            employeeData.forEach(employee => {
+                if (employee['Primary Skill']) {
+                    primarySkills.add(employee['Primary Skill']);
+                }
+            });
+
+            const dropdown = document.getElementById('primarySkillFilter');
+            dropdown.innerHTML = '<option value="">All Primary Skills</option>';
+            
+            Array.from(primarySkills).sort().forEach(skill => {
+                const option = document.createElement('option');
+                option.value = skill;
+                option.textContent = skill;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Populate User Status dropdown with unique values
+        function populateUserStatusDropdown() {
+            const userStatuses = new Set();
+            employeeData.forEach(employee => {
+                if (employee['User Status']) {
+                    userStatuses.add(employee['User Status']);
+                }
+            });
+
+            const dropdown = document.getElementById('userStatusFilter');
+            dropdown.innerHTML = '<option value="">All User Status</option>';
+            
+            Array.from(userStatuses).sort().forEach(status => {
+                const option = document.createElement('option');
+                option.value = status;
+                option.textContent = status;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            filteredData = employeeData.filter(employee => {
+                const matchesSearch = currentSearchTerm === '' || 
+                    employee['Employee Name'].toLowerCase().includes(currentSearchTerm);
+                const matchesServiceLine = currentServiceLine === '' || 
+                    employee['Service Line'] === currentServiceLine;
+                const matchesPrimarySkill = currentPrimarySkill === '' || 
+                    employee['Primary Skill'] === currentPrimarySkill;
+                const matchesUserStatus = currentUserStatus === '' || 
+                    employee['User Status'] === currentUserStatus;
+                
+                // Calculate total allocation
+                const totalAllocation = (parseFloat(employee['Allocation 1'] || 0) + 
+                                        parseFloat(employee['Allocation 2'] || 0) + 
+                                        parseFloat(employee['Allocation 3'] || 0));
+                
+                let matchesAllocationRange = true;
+                if (currentAllocationRange !== '') {
+                    if (currentAllocationRange === '0') {
+                        matchesAllocationRange = totalAllocation === 0;
+                    } else if (currentAllocationRange === '1-25') {
+                        matchesAllocationRange = totalAllocation >= 1 && totalAllocation <= 25;
+                    } else if (currentAllocationRange === '26-50') {
+                        matchesAllocationRange = totalAllocation >= 26 && totalAllocation <= 50;
+                    } else if (currentAllocationRange === '51-75') {
+                        matchesAllocationRange = totalAllocation >= 51 && totalAllocation <= 75;
+                    } else if (currentAllocationRange === '76-99') {
+                        matchesAllocationRange = totalAllocation >= 76 && totalAllocation <= 99;
+                    } else if (currentAllocationRange === '100') {
+                        matchesAllocationRange = totalAllocation === 100;
+                    } else if (currentAllocationRange === 'over') {
+                        matchesAllocationRange = totalAllocation > 100;
+                    }
+                }
+                
+                return matchesSearch && matchesServiceLine && matchesPrimarySkill && matchesUserStatus && matchesAllocationRange;
+            });
+            
+            // Always sort by Band in ascending order
+            filteredData.sort((a, b) => {
+                if (a['Band'] < b['Band']) return -1;
+                if (a['Band'] > b['Band']) return 1;
+                return 0;
+            });
+            
+            updateStackedBarChart(filteredData);
+            updateResultsCounter(filteredData.length, employeeData.length);
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(event) {
+            currentSearchTerm = event.target.value.toLowerCase().trim();
+            applyFilters();
+        });
+
+        // Service Line filter
+        document.getElementById('serviceLineFilter').addEventListener('change', function(event) {
+            currentServiceLine = event.target.value;
+            applyFilters();
+        });
+
+        // Primary Skill filter
+        document.getElementById('primarySkillFilter').addEventListener('change', function(event) {
+            currentPrimarySkill = event.target.value;
+            applyFilters();
+        });
+
+        // User Status filter
+        document.getElementById('userStatusFilter').addEventListener('change', function(event) {
+            currentUserStatus = event.target.value;
+            applyFilters();
+        });
+
+        // Allocation Range filter
+        document.getElementById('allocationRangeFilter').addEventListener('change', function(event) {
+            currentAllocationRange = event.target.value;
+            applyFilters();
+        });
+
+        // Refresh button - clear all filters
+        document.getElementById('refreshButton').addEventListener('click', function() {
+            // Reset all filter values
+            currentSearchTerm = '';
+            currentServiceLine = '';
+            currentPrimarySkill = '';
+            currentUserStatus = '';
+            currentAllocationRange = '';
+            
+            // Reset UI elements
+            document.getElementById('searchInput').value = '';
+            document.getElementById('serviceLineFilter').value = '';
+            document.getElementById('primarySkillFilter').value = '';
+            document.getElementById('userStatusFilter').value = '';
+            document.getElementById('allocationRangeFilter').value = '';
+            
+            // Apply filters (which will show all data)
+            applyFilters();
+        });
+
+        // Update results counter
+        function updateResultsCounter(filtered, total) {
+            const counter = document.getElementById('resultsCounter');
+            if (filtered === total) {
+                counter.textContent = `Showing all ${total} employees`;
+            } else {
+                counter.textContent = `Showing ${filtered} of ${total} employees`;
+            }
+        }
+
+        // Create or update stacked bar chart with project allocation percentages
+        function updateStackedBarChart(data) {
+            const labels = data.map(row => `${row['Employee Name']} (${row['Band']})`);
+            const allocationData1 = data.map(row => parseFloat(row['Allocation 1'] || 0));
+            const allocationData2 = data.map(row => parseFloat(row['Allocation 2'] || 0));
+            const allocationData3 = data.map(row => parseFloat(row['Allocation 3'] || 0));
+
+            const projectNames1 = data.map(row => row['Project 1'] || 'Project 1');
+            const projectNames2 = data.map(row => row['Project 2'] || 'Project 2');
+            const projectNames3 = data.map(row => row['Project 3'] || 'Project 3');
+
+            const releaseDates1 = data.map(row => row['Release Date 1'] || 'N/A');
+            const releaseDates2 = data.map(row => row['Release Date 2'] || 'N/A');
+            const releaseDates3 = data.map(row => row['Release Date 3'] || 'N/A');
+
+            if (allocationChart) {
+                allocationChart.destroy();
+            }
+
+            document.getElementById('chartContainer').style.height = `${Math.max(data.length * 30, 300)}px`;
+
+            const ctx = document.getElementById('allocationChart').getContext('2d');
+            allocationChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Project 1 Allocation %',
+                            data: allocationData1,
+                            backgroundColor: '#FF6384',
+                            projectNames: projectNames1,
+                            releaseDates: releaseDates1
+                        },
+                        {
+                            label: 'Project 2 Allocation %',
+                            data: allocationData2,
+                            backgroundColor: '#36A2EB',
+                            projectNames: projectNames2,
+                            releaseDates: releaseDates2
+                        },
+                        {
+                            label: 'Project 3 Allocation %',
+                            data: allocationData3,
+                            backgroundColor: '#FFCE56',
+                            projectNames: projectNames3,
+                            releaseDates: releaseDates3
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Allocation Percentage'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Employee (Band) - Click name for details'
+                            },
+                            ticks: {
+                                autoSkip: false,
+                                font: {
+                                    size: 11
+                                },
+                                color: '#2a72d9',
+                                padding: 5
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            enabled: false,
+                            external: function(context) {
+                                const tooltipModel = context.tooltip;
+                                
+                                if (tooltipModel.opacity === 0) {
+                                    document.getElementById('custom-tooltip').classList.remove("show");
+                                    return;
+                                }
+
+                                const chart = context.chart;
+                                const { datasetIndex, dataIndex } = tooltipModel.dataPoints[0];
+                                const dataset = chart.data.datasets[datasetIndex];
+                                const projectName = dataset.projectNames[dataIndex];
+                                const releaseDate = dataset.releaseDates[dataIndex];
+                                const allocation = dataset.data[dataIndex];
+
+                                const tooltip = document.getElementById('custom-tooltip');
+                                tooltip.innerHTML = `<strong>${projectName}</strong><br>Release Date: ${releaseDate}<br>Allocation: ${allocation}%`;
+                                tooltip.classList.add("show");
+                                
+                                const bar = context.chart.getDatasetMeta(datasetIndex).data[dataIndex];
+                                tooltip.style.left = `${chart.canvas.offsetLeft + bar.x + 10}px`;
+                                tooltip.style.top = `${chart.canvas.offsetTop + bar.y - tooltip.offsetHeight / 2}px`;
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#333'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Add click listener to canvas for employee name clicks
+            const canvas = document.getElementById('allocationChart');
+            canvas.addEventListener('click', function(event) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                const yScale = allocationChart.scales.y;
+                const xScale = allocationChart.scales.x;
+                
+                // Check if click is in the Y-axis label area
+                if (x >= yScale.left && x <= xScale.left && y >= yScale.top && y <= yScale.bottom) {
+                    // Calculate which label index was clicked
+                    const clickPositionInScale = y - yScale.top;
+                    const totalScaleHeight = yScale.bottom - yScale.top;
+                    const labelIndex = Math.floor((clickPositionInScale / totalScaleHeight) * data.length);
+                    
+                    if (labelIndex >= 0 && labelIndex < data.length) {
+                        showEmployeeDetails(data[labelIndex]);
+                    }
+                }
+            });
+        }
+
+        // Show employee details modal
+        function showEmployeeDetails(employee) {
+            const modal = document.getElementById('employeeModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            const totalAllocation = (parseFloat(employee['Allocation 1'] || 0) + 
+                                    parseFloat(employee['Allocation 2'] || 0) + 
+                                    parseFloat(employee['Allocation 3'] || 0));
+            
+            let employeeInfoHtml = `
+                <div class="employee-info-section">
+                    <h3 style="color: #2a72d9; margin-top: 0; font-size: 15px;">Employee Information</h3>
+                    <div class="detail-row">
+                        <div class="detail-label">Employee Name:</div>
+                        <div class="detail-value">${employee['Employee Name'] || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Band:</div>
+                        <div class="detail-value">${employee['Band'] || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Manager Name:</div>
+                        <div class="detail-value">${employee['Manager Name'] || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Service Line:</div>
+                        <div class="detail-value">${employee['Service Line'] || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Primary Skill:</div>
+                        <div class="detail-value">${employee['Primary Skill'] || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">User Status:</div>
+                        <div class="detail-value">${employee['User Status'] || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Total Allocation:</div>
+                        <div class="detail-value"><strong>${totalAllocation}%</strong></div>
+                    </div>
+                </div>
+            `;
+            
+            let projectsHtml = '<div class="projects-section"><h3 style="color: #2a72d9; margin-top: 0; font-size: 15px;">Project Allocations</h3>';
+            
+            // Project 1
+            if (employee['Project 1']) {
+                projectsHtml += `
+                    <div class="project-section">
+                        <h3>Project 1</h3>
+                        <div class="detail-row">
+                            <div class="detail-label">Project Name:</div>
+                            <div class="detail-value">${employee['Project 1']}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Allocation:</div>
+                            <div class="detail-value">${employee['Allocation 1'] || 0}%</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Release Date:</div>
+                            <div class="detail-value">${employee['Release Date 1'] || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Project 2
+            if (employee['Project 2']) {
+                projectsHtml += `
+                    <div class="project-section">
+                        <h3>Project 2</h3>
+                        <div class="detail-row">
+                            <div class="detail-label">Project Name:</div>
+                            <div class="detail-value">${employee['Project 2']}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Allocation:</div>
+                            <div class="detail-value">${employee['Allocation 2'] || 0}%</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Release Date:</div>
+                            <div class="detail-value">${employee['Release Date 2'] || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Project 3
+            if (employee['Project 3']) {
+                projectsHtml += `
+                    <div class="project-section">
+                        <h3>Project 3</h3>
+                        <div class="detail-row">
+                            <div class="detail-label">Project Name:</div>
+                            <div class="detail-value">${employee['Project 3']}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Allocation:</div>
+                            <div class="detail-value">${employee['Allocation 3'] || 0}%</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Release Date:</div>
+                            <div class="detail-value">${employee['Release Date 3'] || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            projectsHtml += '</div>';
+            
+            modalBody.innerHTML = `
+                <div class="modal-body-content">
+                    ${employeeInfoHtml}
+                    ${projectsHtml}
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        // Close modal function
+        function closeModal() {
+            const modal = document.getElementById('employeeModal');
+            modal.style.display = 'none';
+        }
+
+        // Setup modal close handlers - using event delegation
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('employeeModal');
+            
+            // Close if clicking the X button
+            if (event.target.classList.contains('close')) {
+                closeModal();
+            }
+            
+            // Close if clicking outside the modal content
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+
+    <!-- Custom Tooltip -->
+    <div id="custom-tooltip" class="custom-tooltip"></div>
+
+    <!-- Employee Details Modal -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Employee Details</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+</body>
+</html>
